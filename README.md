@@ -20,6 +20,6 @@ This is a Node.js backend application built with Express and Mongoose.
 ## 📦 Setup
 
 ```bash
+cd ExpensesApp
 npm install
-cp .env.example .env
-npm start
+npm run dev
