@@ -4,7 +4,7 @@ import protect from "../middlewares/authMiddleware.js";
 import expensesController from "../controllers/expensesController.js";
 const { getAllExpenses, createExpense, updateExpenseById, deleteExpenseById, getExpenseById, getExpensesByUserId } = expensesController;
 // GET /api/expenses
-router.get("/getAllExpenses", protect(["admin", "user"]), getAllExpenses);
+router.get("/getAllExpenses", protect(["admin"]), getAllExpenses);
 
 router.post("/createExpense", protect(["admin", "user"]), createExpense);
 

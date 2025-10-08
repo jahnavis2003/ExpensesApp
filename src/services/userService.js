@@ -15,6 +15,13 @@ const createUserAsync = async (data) => {
         error.statusCode = 409;
         throw error;
     }
+    //Check if username exists
+    const existingUsername = await User.findOne({ username: data.username });
+    if (existingUsername) {
+        const error = new Error('Username already in use');
+        error.statusCode = 409;
+        throw error;    
+    }
     const user = new User(data);
     // you can modify `user` here if needed
     return await user.save();
@@ -73,8 +80,8 @@ const updateUserByIdAsync = async (userId, updateData, currentUser) => {
     return existingUser;
 };
 
-const getUserByIdAsync = (id) => {
-    const user = User.findById(id);
+const getUserByIdAsync = async (id) => {
+    const user = await User.findById(id);
     return user;
 };
 
@@ -85,7 +92,7 @@ const deleteUserByIdAsync = async (id) => {
       error.statusCode = 404;
       throw error;
     }
-    const deleteUser = User.findByIdAndDelete(id);
+    const deleteUser = await User.findByIdAndDelete(id);
     return deleteUser;
 };
 

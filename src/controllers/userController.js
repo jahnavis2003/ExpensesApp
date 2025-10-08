@@ -3,16 +3,10 @@ import sendResponse from "../utils/response.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import hashPassword from "../utils/hashPassword.js";
 import passwordValidator from "../utils/passwordValidator.js";
-import validator from "validator";
+import sanitizeInput from "../utils/sanitizeInput.js";
 
-
+const { hasUnsafeChars, hasSpaces } = sanitizeInput;
 const { getAllUsersAsync, createUserAsync, updateUserByIdAsync, deleteUserByIdAsync, getUserByIdAsync, updateUserPasswordAsync } = userService;
-
-// Helper to detect if input has unsafe characters (like < > & " etc.)
-const hasUnsafeChars = (str) => str !== validator.escape(str);
-
-// Helper to detect spaces anywhere in the string
-const hasSpaces = (str) => /\s/.test(str);
 
 // Fetch all users
 const getAllUsers = asyncHandler(async (req, res) => {
@@ -26,6 +20,11 @@ const getAllUsers = asyncHandler(async (req, res) => {
 // Create a new user
 const createUser = asyncHandler (async (req, res) => {
     const { email, password, username, firstName, lastName, role } = req.body;
+
+    //Required fields
+    if (!username || !firstName || !lastName || !email || !password) {
+        return sendResponse(res, 400, false, null, "All fields are required");
+    }
 
     //Ensure all fields are strings
     if (
@@ -60,11 +59,6 @@ const createUser = asyncHandler (async (req, res) => {
     // Normalize email to lowercase
     const normalizedEmail = email.toLowerCase();
 
-    //Required fields
-    if (!username || !firstName || !lastName || !email || !password) {
-        return sendResponse(res, 400, false, null, "All fields are required");
-    }
-
     //Password length check
     if (!passwordValidator(password)) {
         return sendResponse(res, 400, false, null, "Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character!");
@@ -86,6 +80,10 @@ const createUser = asyncHandler (async (req, res) => {
 
     //Create the user
     const user = await createUserAsync(userData);
+
+    if (!user) {
+        return sendResponse(res, 500, false, null, "User creation failed");
+    }
 
     //Remove password before sending response
     const userObject = user.toObject();
@@ -147,6 +145,9 @@ const updateUserById = asyncHandler (async (req, res) => {
 // Get single user by ID
 const getUserById = asyncHandler (async (req, res) => {
     const { id } = req.params;
+    if (!id) {
+        return sendResponse(res, 400, false, null, "User ID is required");
+    }
     if (req.user.role !== 'admin' && req.user.id !== id) {
         return sendResponse(res, 403, false, null, "You do not have permission to view this user");
     }
@@ -160,6 +161,12 @@ const getUserById = asyncHandler (async (req, res) => {
 // Delete an user
 const deleteUserById = asyncHandler (async (req, res) => {
     const { id } = req.params;
+    if (!id) {
+        return sendResponse(res, 400, false, null, "User ID is required");
+    }
+    if (req.user.id === id) {
+        return sendResponse(res, 400, false, null, "You cannot delete your own account");
+    }
     const deletedUser = await deleteUserByIdAsync(id);
     if (!deletedUser) {
       return sendResponse(res, 404, false, null, "User not found - Deletion failed!");
